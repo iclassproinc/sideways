@@ -1,0 +1,36 @@
+[package]
+name = "sideways"
+version = "0.1.0"
+edition = "2021"
+authors = ["iClassPro"]
+description = "Observability from the side - Datadog tracing and StatsD metrics for Rust services"
+license = "MIT"
+repository = "https://github.com/iclassproinc/sideways"
+homepage = "https://github.com/iclassproinc/sideways"
+documentation = "https://docs.rs/sideways"
+readme = "README.md"
+keywords = ["observability", "telemetry", "datadog", "statsd", "metrics"]
+categories = ["development-tools::profiling", "development-tools::debugging"]
+rust-version = "1.70"
+
+[dependencies]
+# Tracing foundation
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-opentelemetry = "0.32.0"
+
+# Datadog native tracing
+datadog-opentelemetry = { git = "https://github.com/DataDog/dd-trace-rs", branch = "main" }
+opentelemetry = "0.31.0"
+opentelemetry_sdk = "0.31.0"
+
+# Metrics
+cadence = "1.6"
+cadence-macros = "1.6"
+
+# Error handling
+thiserror = "2.0"
+
+[lib]
+name = "sideways"
+path = "src/lib.rs"
