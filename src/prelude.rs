@@ -3,7 +3,7 @@
 /// Import this to get everything you need for telemetry in one line:
 ///
 /// ```rust
-/// use pony_telemetry::prelude::*;
+/// use sideways::prelude::*;
 /// ```
 ///
 /// This provides:

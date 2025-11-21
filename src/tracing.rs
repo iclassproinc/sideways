@@ -101,7 +101,7 @@ pub fn init_datadog(
     tracing::subscriber::set_global_default(layered_subscriber)
         .map_err(|e| TelemetryError::SubscriberInit(e.to_string()))?;
 
-    tracing::info!("🐴 Datadog tracing initialized successfully");
+    tracing::info!("🦀 Datadog tracing initialized successfully");
 
     Ok(tracer_provider)
 }

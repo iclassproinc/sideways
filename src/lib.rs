@@ -96,14 +96,14 @@ impl Default for TelemetryConfig {
     fn default() -> Self {
         Self {
             datadog_enabled: true,
-            dd_service: "pony-service".to_string(),
+            dd_service: "sideways-service".to_string(),
             dd_env: "development".to_string(),
             dd_trace_agent_url: "http://localhost:8126".to_string(),
             rust_log: "info".to_string(),
             metrics_enabled: true,
             statsd_host: "localhost".to_string(),
             statsd_port: 8125,
-            metrics_prefix: "pony".to_string(),
+            metrics_prefix: "sideways".to_string(),
         }
     }
 }
@@ -238,22 +238,22 @@ pub struct Telemetry {
 /// Returns a `Telemetry` struct that must be kept alive for the duration
 /// of the application and properly shutdown on exit.
 pub async fn init_telemetry(config: TelemetryConfig) -> Telemetry {
-    eprintln!("🐴 Pony Telemetry: Initializing...");
+    eprintln!("🦀 Sideways Telemetry: Initializing...");
 
     // Initialize Datadog tracing
     let tracer_provider = if config.datadog_enabled {
         match tracing::init_datadog(&config) {
             Ok(provider) => {
-                eprintln!("✅ Pony Telemetry: Datadog tracing initialized");
+                eprintln!("✅ Sideways Telemetry: Datadog tracing initialized");
                 Some(provider)
             }
             Err(err) => {
-                eprintln!("⚠️  Pony Telemetry: Datadog tracing unavailable: {}", err);
+                eprintln!("⚠️  Sideways Telemetry: Datadog tracing unavailable: {}", err);
                 None
             }
         }
     } else {
-        eprintln!("📊 Pony Telemetry: Datadog tracing disabled");
+        eprintln!("📊 Sideways Telemetry: Datadog tracing disabled");
         tracing::init_console_logging(&config);
         None
     };
@@ -261,10 +261,10 @@ pub async fn init_telemetry(config: TelemetryConfig) -> Telemetry {
     // Initialize metrics
     if config.metrics_enabled {
         if let Err(err) = metrics::init_metrics(&config) {
-            eprintln!("⚠️  Pony Telemetry: Metrics unavailable: {}", err);
+            eprintln!("⚠️  Sideways Telemetry: Metrics unavailable: {}", err);
         }
     } else {
-        eprintln!("📊 Pony Telemetry: Metrics disabled");
+        eprintln!("📊 Sideways Telemetry: Metrics disabled");
     }
 
     Telemetry { tracer_provider }
