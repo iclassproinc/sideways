@@ -323,7 +323,6 @@ MIT
 
 ## Credits
 
-Built by iClassPro team, inspired by:
-- [Permafrost](https://github.com/yourusername/permafrost) - gRPC patterns and Datadog setup
+Built by iClassPro team, powered by:
 - [Cadence](https://github.com/56quarters/cadence) - Excellent StatsD client
 - [dd-trace-rs](https://github.com/DataDog/dd-trace-rs) - Datadog native tracing
