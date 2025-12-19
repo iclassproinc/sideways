@@ -80,7 +80,7 @@ pub fn init_datadog(
 
     let tracer_provider = datadog_opentelemetry::tracing()
         .with_config(
-            datadog_opentelemetry::core::Config::builder()
+            datadog_opentelemetry::configuration::Config::builder()
                 .set_service(config.dd_service.clone())
                 .set_agent_host(config.dd_trace_agent_url.clone().into())
                 .build(),

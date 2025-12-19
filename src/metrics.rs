@@ -36,9 +36,23 @@ use std::net::UdpSocket;
 /// statsd_set!("some.set", 1, "tag" => "val");
 /// ```
 pub fn init_metrics(config: &TelemetryConfig) -> Result<(), TelemetryError> {
+    let tags_info = if config.global_tags.is_empty() {
+        String::new()
+    } else {
+        format!(
+            " with global tags: [{}]",
+            config
+                .global_tags
+                .iter()
+                .map(|(k, v)| format!("{}:{}", k, v))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    };
+
     eprintln!(
-        "📊 Initializing metrics: {}:{} with prefix '{}'",
-        config.statsd_host, config.statsd_port, config.metrics_prefix
+        "📊 Initializing metrics: {}:{} with prefix '{}'{}",
+        config.statsd_host, config.statsd_port, config.metrics_prefix, tags_info
     );
 
     // Bind to an ephemeral UDP port
@@ -52,8 +66,15 @@ pub fn init_metrics(config: &TelemetryConfig) -> Result<(), TelemetryError> {
     // Add queuing layer for asynchronous dispatch
     let queued = QueuingMetricSink::from(buffered);
 
-    // Create client with namespace prefix
-    let client = StatsdClient::from_sink(&config.metrics_prefix, queued);
+    // Create client with namespace prefix and global tags using builder pattern
+    let mut builder = StatsdClient::builder(&config.metrics_prefix, queued);
+
+    // Add each global tag to the client
+    for (key, value) in &config.global_tags {
+        builder = builder.with_tag(key, value);
+    }
+
+    let client = builder.build();
 
     // Register as global default for macro usage
     cadence_macros::set_global_default(client);
