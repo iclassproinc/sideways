@@ -1,6 +1,6 @@
 [package]
 name = "sideways"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["iClassPro", "Jeremiah Fulbright"]
 description = "Observability from the side - Datadog tracing and StatsD metrics for Rust services"
@@ -15,12 +15,12 @@ rust-version = "1.85"
 
 [dependencies]
 # Tracing foundation
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json"] }
 tracing-opentelemetry = "0.32.0"
 
 # Datadog native tracing
-datadog-opentelemetry = { version = "0.1.0" }
+datadog-opentelemetry = { version = "0.2.1" }
 opentelemetry = "0.31.0"
 opentelemetry_sdk = "0.31.0"
 

@@ -90,6 +90,8 @@ pub struct TelemetryConfig {
     pub statsd_port: u16,
     /// Metrics prefix/namespace
     pub metrics_prefix: String,
+    /// Global tags to append to all metrics
+    pub global_tags: Vec<(String, String)>,
 }
 
 impl Default for TelemetryConfig {
@@ -104,6 +106,7 @@ impl Default for TelemetryConfig {
             statsd_host: "localhost".to_string(),
             statsd_port: 8125,
             metrics_prefix: "sideways".to_string(),
+            global_tags: Vec::new(),
         }
     }
 }
@@ -155,8 +158,26 @@ impl TelemetryConfig {
         if let Ok(prefix) = env::var("METRICS_PREFIX") {
             config.metrics_prefix = prefix;
         }
+        if let Ok(tags_str) = env::var("STATSD_GLOBAL_TAGS") {
+            config.global_tags = Self::parse_tags(&tags_str);
+        }
 
         config
+    }
+
+    /// Parse tags from a string in the format "key1:value1,key2:value2"
+    fn parse_tags(tags_str: &str) -> Vec<(String, String)> {
+        tags_str
+            .split(',')
+            .filter_map(|tag| {
+                let parts: Vec<&str> = tag.trim().splitn(2, ':').collect();
+                if parts.len() == 2 {
+                    Some((parts[0].to_string(), parts[1].to_string()))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     /// Create a builder for custom configuration
@@ -214,6 +235,18 @@ impl TelemetryConfigBuilder {
 
     pub fn metrics_prefix(mut self, prefix: impl Into<String>) -> Self {
         self.config.metrics_prefix = prefix.into();
+        self
+    }
+
+    /// Set global tags that will be appended to all metrics
+    pub fn global_tags(mut self, tags: Vec<(String, String)>) -> Self {
+        self.config.global_tags = tags;
+        self
+    }
+
+    /// Add a single global tag that will be appended to all metrics
+    pub fn with_global_tag(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.config.global_tags.push((key.into(), value.into()));
         self
     }
 
