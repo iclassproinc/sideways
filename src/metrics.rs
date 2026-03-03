@@ -20,7 +20,8 @@ use std::net::UdpSocket;
 /// # Example Usage
 ///
 /// ```rust,no_run
-/// use cadence_macros::statsd_count;
+/// use sideways::prelude::*;
+/// use std::time::Duration;
 ///
 /// statsd_count!("some.counter", 1, "tag" => "val");
 /// statsd_gauge!("some.gauge", 1, "tag" => "val");
