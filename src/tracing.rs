@@ -132,8 +132,10 @@ pub fn init_datadog(
                 .with_filter(tracing_subscriber::filter::LevelFilter::INFO);
 
             if let Some(ref lp) = logger_provider {
+                let logs_filter = get_env_filter(config);
                 let logs_layer =
-                    opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge::new(lp);
+                    opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge::new(lp)
+                        .with_filter(logs_filter);
                 tracing::subscriber::set_global_default(
                     subscriber.with(console).with(telemetry).with(logs_layer),
                 )
