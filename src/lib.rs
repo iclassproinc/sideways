@@ -92,6 +92,11 @@ pub struct TelemetryConfig {
     pub metrics_prefix: String,
     /// Global tags to append to all metrics
     pub global_tags: Vec<(String, String)>,
+
+    /// Enable/disable Datadog log ingestion (default: true)
+    pub dd_logs_enabled: bool,
+    /// Enable JSON-formatted console logging (default: false)
+    pub json_logging: bool,
 }
 
 impl Default for TelemetryConfig {
@@ -107,6 +112,8 @@ impl Default for TelemetryConfig {
             statsd_port: 8125,
             metrics_prefix: "sideways".to_string(),
             global_tags: Vec::new(),
+            dd_logs_enabled: true,
+            json_logging: false,
         }
     }
 }
@@ -160,6 +167,20 @@ impl TelemetryConfig {
         }
         if let Ok(tags_str) = env::var("STATSD_GLOBAL_TAGS") {
             config.global_tags = Self::parse_tags(&tags_str);
+        }
+
+        // Datadog logs configuration
+        if let Ok(enabled) = env::var("DD_LOGS_ENABLED") {
+            if enabled.to_lowercase() == "false" {
+                config.dd_logs_enabled = false;
+            }
+        }
+
+        // JSON logging configuration
+        if let Ok(enabled) = env::var("JSON_LOGGING") {
+            if enabled.to_lowercase() == "true" {
+                config.json_logging = true;
+            }
         }
 
         config
@@ -250,6 +271,16 @@ impl TelemetryConfigBuilder {
         self
     }
 
+    pub fn dd_logs_enabled(mut self, enabled: bool) -> Self {
+        self.config.dd_logs_enabled = enabled;
+        self
+    }
+
+    pub fn json_logging(mut self, enabled: bool) -> Self {
+        self.config.json_logging = enabled;
+        self
+    }
+
     pub fn build(self) -> TelemetryConfig {
         self.config
     }
@@ -259,6 +290,8 @@ impl TelemetryConfigBuilder {
 pub struct Telemetry {
     /// Datadog tracer provider (must be kept alive and shutdown on exit)
     pub tracer_provider: Option<opentelemetry_sdk::trace::SdkTracerProvider>,
+    /// Datadog logger provider (must be kept alive and shutdown on exit)
+    pub logger_provider: Option<opentelemetry_sdk::logs::SdkLoggerProvider>,
 }
 
 /// Initialize telemetry with the given configuration.
@@ -274,21 +307,24 @@ pub async fn init_telemetry(config: TelemetryConfig) -> Telemetry {
     eprintln!("🦀 Sideways Telemetry: Initializing...");
 
     // Initialize Datadog tracing
-    let tracer_provider = if config.datadog_enabled {
+    let (tracer_provider, logger_provider) = if config.datadog_enabled {
         match tracing::init_datadog(&config) {
-            Ok(provider) => {
+            Ok((tp, lp)) => {
                 eprintln!("✅ Sideways Telemetry: Datadog tracing initialized");
-                Some(provider)
+                if lp.is_some() {
+                    eprintln!("✅ Sideways Telemetry: Datadog log ingestion initialized");
+                }
+                (Some(tp), lp)
             }
             Err(err) => {
                 eprintln!("⚠️  Sideways Telemetry: Datadog tracing unavailable: {}", err);
-                None
+                (None, None)
             }
         }
     } else {
         eprintln!("📊 Sideways Telemetry: Datadog tracing disabled");
         tracing::init_console_logging(&config);
-        None
+        (None, None)
     };
 
     // Initialize metrics
@@ -300,5 +336,8 @@ pub async fn init_telemetry(config: TelemetryConfig) -> Telemetry {
         eprintln!("📊 Sideways Telemetry: Metrics disabled");
     }
 
-    Telemetry { tracer_provider }
+    Telemetry {
+        tracer_provider,
+        logger_provider,
+    }
 }
