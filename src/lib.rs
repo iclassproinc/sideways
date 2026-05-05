@@ -168,6 +168,10 @@ impl TelemetryConfig {
         if let Ok(tags_str) = env::var("STATSD_GLOBAL_TAGS") {
             config.global_tags = Self::parse_tags(&tags_str);
         }
+        // Automatically include DD_ENV as "env" tag if not already set via STATSD_GLOBAL_TAGS
+        if !config.global_tags.iter().any(|(k, _)| k == "env") {
+            config.global_tags.push(("env".to_string(), config.dd_env.clone()));
+        }
 
         // Datadog logs configuration
         if let Ok(enabled) = env::var("DD_LOGS_ENABLED") {
