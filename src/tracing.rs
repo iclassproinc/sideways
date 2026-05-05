@@ -7,7 +7,10 @@ use tracing_subscriber::{EnvFilter, Registry};
 
 /// Get an EnvFilter from configuration.
 fn get_env_filter(config: &TelemetryConfig) -> EnvFilter {
-    eprintln!("📊 Configuring EnvFilter with RUST_LOG: {}", config.rust_log);
+    eprintln!(
+        "📊 Configuring EnvFilter with RUST_LOG: {}",
+        config.rust_log
+    );
 
     EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new(&config.rust_log))
@@ -103,9 +106,7 @@ pub fn init_datadog(
     // Optionally initialize Datadog log ingestion
     let logger_provider = if config.dd_logs_enabled {
         match std::panic::catch_unwind(|| {
-            datadog_opentelemetry::logs()
-                .with_config(dd_config)
-                .init()
+            datadog_opentelemetry::logs().with_config(dd_config).init()
         }) {
             Ok(provider) => Some(provider),
             Err(_) => {
@@ -141,22 +142,22 @@ pub fn init_datadog(
                 )
                 .map_err(|e| TelemetryError::SubscriberInit(e.to_string()))?;
             } else {
-                tracing::subscriber::set_global_default(
-                    subscriber.with(console).with(telemetry),
-                )
-                .map_err(|e| TelemetryError::SubscriberInit(e.to_string()))?;
+                tracing::subscriber::set_global_default(subscriber.with(console).with(telemetry))
+                    .map_err(|e| TelemetryError::SubscriberInit(e.to_string()))?;
             }
         }};
     }
 
     if config.json_logging {
-        set_subscriber!(tracing_subscriber::fmt::layer()
-            .with_ansi(false)
-            .with_timer(tracing_subscriber::fmt::time::UtcTime::rfc_3339())
-            .json()
-            .flatten_event(true)
-            .with_target(true)
-            .with_span_list(true));
+        set_subscriber!(
+            tracing_subscriber::fmt::layer()
+                .with_ansi(false)
+                .with_timer(tracing_subscriber::fmt::time::UtcTime::rfc_3339())
+                .json()
+                .flatten_event(true)
+                .with_target(true)
+                .with_span_list(true)
+        );
     } else {
         set_subscriber!(tracing_subscriber::fmt::layer().with_ansi(false));
     }

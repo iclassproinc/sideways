@@ -9,7 +9,6 @@
 /// This provides:
 /// - All metric macros (statsd_count, statsd_gauge, statsd_time, etc.)
 /// - The cadence module (required for macros to work)
-
 // Re-export all the macros
 pub use cadence_macros::{
     statsd_count, statsd_distribution, statsd_gauge, statsd_histogram, statsd_meter, statsd_set,

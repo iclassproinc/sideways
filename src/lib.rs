@@ -97,10 +97,26 @@ pub struct TelemetryConfig {
     pub dd_logs_enabled: bool,
     /// Enable JSON-formatted console logging (default: false)
     pub json_logging: bool,
+
+    /// Use synchronous (non-queued) metric dispatch.
+    ///
+    /// When true, each `statsd_*!` call sends a UDP packet immediately and
+    /// blocks until the send completes, rather than handing off to a
+    /// background thread. This is automatically enabled when
+    /// `AWS_LAMBDA_FUNCTION_NAME` is set, because Lambda freezes the execution
+    /// environment the moment the handler returns — the `QueuingMetricSink`
+    /// background thread would be frozen before flushing, causing metrics to
+    /// be dropped or deferred to the next invocation.
+    ///
+    /// For long-running services (ECS, Kubernetes, etc.) leave this `false`
+    /// to keep the async, batched behaviour.
+    pub sync_metrics: bool,
 }
 
 impl Default for TelemetryConfig {
     fn default() -> Self {
+        // Auto-detect Lambda: AWS sets AWS_LAMBDA_FUNCTION_NAME on every Lambda.
+        let sync_metrics = env::var("AWS_LAMBDA_FUNCTION_NAME").is_ok();
         Self {
             datadog_enabled: true,
             dd_service: "sideways-service".to_string(),
@@ -114,6 +130,7 @@ impl Default for TelemetryConfig {
             global_tags: Vec::new(),
             dd_logs_enabled: true,
             json_logging: false,
+            sync_metrics,
         }
     }
 }
@@ -170,7 +187,9 @@ impl TelemetryConfig {
         }
         // Automatically include DD_ENV as "env" tag if not already set via STATSD_GLOBAL_TAGS
         if !config.global_tags.iter().any(|(k, _)| k == "env") {
-            config.global_tags.push(("env".to_string(), config.dd_env.clone()));
+            config
+                .global_tags
+                .push(("env".to_string(), config.dd_env.clone()));
         }
 
         // Datadog logs configuration
@@ -285,6 +304,14 @@ impl TelemetryConfigBuilder {
         self
     }
 
+    /// Override the sync_metrics setting. When `true`, each metric send
+    /// blocks until the UDP packet is written (required for Lambda).
+    /// Defaults to auto-detection via `AWS_LAMBDA_FUNCTION_NAME`.
+    pub fn sync_metrics(mut self, enabled: bool) -> Self {
+        self.config.sync_metrics = enabled;
+        self
+    }
+
     pub fn build(self) -> TelemetryConfig {
         self.config
     }
@@ -321,7 +348,10 @@ pub async fn init_telemetry(config: TelemetryConfig) -> Telemetry {
                 (Some(tp), lp)
             }
             Err(err) => {
-                eprintln!("⚠️  Sideways Telemetry: Datadog tracing unavailable: {}", err);
+                eprintln!(
+                    "⚠️  Sideways Telemetry: Datadog tracing unavailable: {}",
+                    err
+                );
                 (None, None)
             }
         }
